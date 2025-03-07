@@ -1,8 +1,14 @@
 from datetime import date
 import json
-from flask import Flask, render_template,jsonify
+from flask import Flask, render_template,jsonify, request, redirect, url_for
 from functools import lru_cache
 import subprocess, requests, re, time
+import sys
+import os
+
+# Add parent directory to path to import from src
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.Utils.BetTracker import BetTracker
 
 
 @lru_cache()
@@ -251,3 +257,94 @@ team_abbreviations = {
     'Memphis Grizzlies': 'MEM',
     'Los Angeles Lakers': 'LAL'
 }
+
+@app.route("/bets")
+def bets():
+    """Display bet tracking page"""
+    tracker = BetTracker()
+    all_bets = tracker.get_all_bets()
+    stats = tracker.get_stats()
+    bankroll = tracker.get_current_bankroll()
+    bankroll_history = tracker.get_bankroll_history()
+    
+    return render_template('bets.html', 
+                          today=date.today(), 
+                          bets=all_bets, 
+                          stats=stats, 
+                          bankroll=bankroll,
+                          bankroll_history=bankroll_history)
+
+@app.route("/add-bet", methods=["POST"])
+def add_bet():
+    """Add a new bet"""
+    bet_data = {
+        "date": request.form.get("date"),
+        "home_team": request.form.get("home_team"),
+        "away_team": request.form.get("away_team"),
+        "bet_type": request.form.get("bet_type"),
+        "bet_pick": request.form.get("bet_pick"),
+        "odds": int(request.form.get("odds")),
+        "amount": float(request.form.get("amount")),
+        "confidence": float(request.form.get("confidence", 0)),
+        "sportsbook": request.form.get("sportsbook")
+    }
+    
+    tracker = BetTracker()
+    tracker.add_bet(bet_data)
+    
+    return redirect(url_for("bets"))
+
+@app.route("/update-bet/<int:bet_id>", methods=["POST"])
+def update_bet(bet_id):
+    """Update a bet's result"""
+    status = request.form.get("status")
+    score_home = request.form.get("score_home")
+    score_away = request.form.get("score_away")
+    
+    if score_home and score_away:
+        score_home = int(score_home)
+        score_away = int(score_away)
+    else:
+        score_home = None
+        score_away = None
+    
+    tracker = BetTracker()
+    tracker.update_bet_result(bet_id, status, score_home, score_away)
+    
+    return redirect(url_for("bets"))
+
+@app.route("/set-bankroll", methods=["POST"])
+def set_bankroll():
+    """Set initial bankroll"""
+    amount = float(request.form.get("amount", 1000))
+    
+    tracker = BetTracker()
+    tracker.set_initial_bankroll(amount)
+    
+    return redirect(url_for("bets"))
+
+@app.route("/api/games")
+def api_games():
+    """API endpoint to get current games data for the bet form"""
+    fanduel = fetch_fanduel(ttl_hash=get_ttl_hash())
+    games_data = []
+    
+    for game_key in fanduel:
+        teams = game_key.split(':')
+        game_data = fanduel[game_key]
+        games_data.append({
+            "home_team": teams[1],
+            "away_team": teams[0],
+            "home_odds": game_data.get("home_team_odds"),
+            "away_odds": game_data.get("away_team_odds"),
+            "ou_value": game_data.get("ou_value"),
+            "home_confidence": game_data.get("home_confidence"),
+            "away_confidence": game_data.get("away_confidence"),
+            "ou_confidence": game_data.get("ou_confidence")
+        })
+    
+    return jsonify(games_data)
+
+if __name__ == "__main__":
+    print("Starting Flask app on http://127.0.0.1:5000")
+    app.run(debug=True)
