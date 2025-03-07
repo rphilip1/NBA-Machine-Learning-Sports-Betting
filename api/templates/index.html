@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Bootstrap CSS and JS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+ 
+    <title>NBA Machine Learning Picks</title>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {}
+                }
+            }
+        }
+    </script>
+    <style>
+        .progress-bar {
+            height: 2px;
+            overflow: hidden;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.1);
+            width: calc(100% - 1rem);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 9999px;
+            background-image: linear-gradient(to right, #6366f1, #3b82f6, #10b981);
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <main class="relative isolate">
+        <section class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <h1 class="py-8 text-left text-4xl font-medium text-white">🏀 NBA AI Model Picks ({{ today }})</h1>
+                <a href="/bets/" class="text-blue-500 hover:text-blue-400">Bet Tracker</a>
+            </div>
+
+            <section class="mx-auto flex bg-white/5 px-6 md:px-8 py-6 ring-1 ring-white/10 sm:rounded-3xl lg:mx-0 lg:max-w-none lg:flex-row lg:items-center xl:gap-x-20">
+                <table role="grid" class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="py-2.5 pl-4 pr-3 text-left text-base font-semibold text-white sm:pl-0">Teams</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">Fanduel</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">Draft Kings</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">BetMGM</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700" style="z-index: 9;">
+                        <tr>
+                            {% for game_key in data.get('fanduel', {}) %}
+                            {% set teams = game_key.split(':') %}
+                        <tr class="divide-x divide-gray-700">
+                            <td class="py-1">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="py-1 font-semibold text-gray-600 text-left text-base">&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0">
+                                                <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ teams[0]|replace(' ', '-')|lower }}">{{ teams[0] }}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0">
+                                                <span class="text-gray-600">@</span> 
+                                                <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ teams[1]|replace(' ', '-')|lower }}">{{ teams[1] }}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
+                            {% set sbgame = data.get(sportsbook, {}).get(game_key) %}
+                            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
+                            <td class="px-3 {{ sportsbook }}"></td>
+                            {% else %}
+                            {% if teams[0] == sbgame.away_team %}
+                            <td class="px-3 {{ sportsbook }}">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">ML</th>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">EV</th>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">O/U</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="relative isolate">
+                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                {% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %}
+                                                <span class="ev-confidence">
+                                                    <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
+                                                    <span class="ev-confidence-value">{{ sbgame.away_confidence }}%</span>
+                                                </span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-bar-fill" id="away-confidence-{{ loop.index }}"></div>
+                                                </div>
+                                                <script>
+                                                    document.getElementById('away-confidence-{{ loop.index }}').style.width = '{{ sbgame.away_confidence }}%';
+                                                </script>
+                                                {% endif %}
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ev-value">{{ sbgame.away_team_ev }}</span>
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%}
+                                                {{ sbgame.ou_value }}</td>
+                                        </tr>
+                                        <tr class="relative isolate">
+                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                {% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %}
+                                                <span class="ev-confidence">
+                                                    <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
+                                                    <span class="ev-confidence-value">{{ sbgame.home_confidence }}%</span>
+                                                </span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-bar-fill" id="home-confidence-{{ loop.index }}"></div>
+                                                </div>
+                                                <script>
+                                                    document.getElementById('home-confidence-{{ loop.index }}').style.width = '{{ sbgame.home_confidence }}%';
+                                                </script>
+                                                {% endif %}
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ev-value">{{ sbgame.home_team_ev }}</span>
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ev-confidence">
+                                                    <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
+                                                    <span class="ev-confidence-value">{{ sbgame.ou_confidence }}%</span>
+                                                </span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-bar-fill" id="ou-confidence-{{ loop.index }}"></div>
+                                                </div>
+                                                <script>
+                                                    document.getElementById('ou-confidence-{{ loop.index }}').style.width = '{{ sbgame.ou_confidence }}%';
+                                                </script>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            {% endif %}
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </section>
+        
+        <div class="absolute inset-x-0 -top-16 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
+            <div class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
+        </div>
+        <div class="absolute inset-x-0 -bottom-24 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
+            <div class="aspect-[1318/752] w-[82.375rem] flex-none rotate-180 bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
+        </div>
+
+    </main>
+    <script>
+        function perc2color(perc, min, max) {
+            var base = (max - min);
+            if (base == 0) {
+                perc = 100;
+            } else {
+                perc = (perc - min) / base * 100;
+            }
+
+            var colorClass = "rose-600";
+
+            if (perc < 50) {
+                colorClass = "red-500";
+            } else if (perc >= 50 && perc <= 54){
+                colorClass = "red-500";
+            } else if (perc >= 55 && perc <= 59){
+                colorClass = "orange-500";
+            } else if (perc >= 60 && perc <= 64){
+                colorClass = "blue-500";
+            } else if (perc >= 65 && perc <= 69){
+                colorClass = "indigo-500";
+            } else if (perc >= 70 && perc <= 74){
+                colorClass = "teal-500";
+            } else if (perc >= 75 && perc <= 80){
+                colorClass = "emerald-500";
+            } else {
+                colorClass = "green-500";
+            }
+            return colorClass;
+        }
+        function parsePerc(perc){
+            return parseFloat(perc);
+        }
+
+        function evScale(val) {
+            var colorClass = "rose-600";
+            if (val < -15) {
+                colorClass = "red-500";
+            } else if (val <= 0){
+                colorClass = "orange-500";
+            } else if (val >= 0 && val <= 5){
+                colorClass = "emerald-500";
+            } else if (val >= 5.01){
+                colorClass = "green-500";
+            }
+            return colorClass;
+        }
+
+        evs = document.getElementsByClassName("ev-value")
+        evconfs = document.getElementsByClassName("ev-confidence-value")
+        ous = document.getElementsByClassName("ou-confidence")
+        for (var i = 0; i < evs.length; i++) {
+            evs[i].classList.add('text-' + evScale(evs[i].textContent))
+        }
+        for (var i = 0; i < evconfs.length; i++) {
+            evconfs[i].classList.add('text-' + perc2color(parsePerc(evconfs[i].textContent), 0, 100))
+        }
+        for (var i = 0; i < ous.length; i++) {
+            ous[i].classList.add('text-' + perc2color(parsePerc(ous[i].textContent), 0, 100))
+        }
+
+        // Team modals
+        document.querySelectorAll('.team-name').forEach(teamElement => {
+            teamElement.addEventListener('click', async (e) => {
+                const teamName = e.target.textContent.trim();
+                const modalId = `modal-${teamName.toLowerCase().replace(/\s+/g, '-')}`;
+                
+                // Check if modal already exists
+                let modal = document.getElementById(modalId);
+                if (!modal) {
+                    // Create modal if it doesn't exist
+                    modal = document.createElement('div');
+                    modal.id = modalId;
+                    modal.className = 'modal fade';
+                    modal.setAttribute('tabindex', '-1');
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.appendChild(modal);
+                    
+                    // Fetch team data
+                    try {
+                        const response = await fetch(`/teams/${teamName}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Create modal content
+                            modal.innerHTML = `
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content bg-gray-800 text-white">
+                                        <div class="modal-header border-gray-700">
+                                            <h5 class="modal-title">${teamName} Roster</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-dark table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Player</th>
+                                                            <th>Pos</th>
+                                                            <th>#</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${data.players.map(player => `
+                                                            <tr class="player-row" data-player-id="${player.playerId}">
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        ${player.headshot ? `<img src="${player.headshot}" alt="${player.name}" class="me-2" style="width: 30px; height: 30px; border-radius: 50%;">` : ''}
+                                                                        <span>${player.name}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>${player.position || '-'}</td>
+                                                                <td>${player.jerseyNum || '-'}</td>
+                                                                <td>
+                                                                    <span class="badge ${player.injury === 'Healthy' ? 'bg-success' : 'bg-danger'}">${player.injury}</span>
+                                                                </td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Add event listeners to player rows
+                            const playerModal = new bootstrap.Modal(modal);
+                            playerModal.show();
+                            
+                            // Add click event to player rows
+                            modal.querySelectorAll('.player-row').forEach(row => {
+                                row.addEventListener('click', async (e) => {
+                                    const playerId = row.getAttribute('data-player-id');
+                                    playerModal.hide();
+                                    
+                                    // Fetch player stats
+                                    try {
+                                        const playerResponse = await fetch(`/players/${playerId}`);
+                                        const playerData = await playerResponse.json();
+                                        
+                                        if (playerData.success) {
+                                            // Create player modal
+                                            const playerModalId = `modal-player-${playerId}`;
+                                            let playerModal = document.getElementById(playerModalId);
+                                            
+                                            if (!playerModal) {
+                                                playerModal = document.createElement('div');
+                                                playerModal.id = playerModalId;
+                                                playerModal.className = 'modal fade';
+                                                playerModal.setAttribute('tabindex', '-1');
+                                                playerModal.setAttribute('aria-hidden', 'true');
+                                                document.body.appendChild(playerModal);
+                                            }
+                                            
+                                            // Create player modal content
+                                            playerModal.innerHTML = `
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content bg-gray-800 text-white">
+                                                        <div class="modal-header border-gray-700">
+                                                            <h5 class="modal-title">${playerData.player.name}</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="row mb-4">
+                                                                <div class="col-md-4 text-center">
+                                                                    ${playerData.player.headshot ? `<img src="${playerData.player.headshot}" alt="${playerData.player.name}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
+                                                                </div>
+                                                                <div class="col-md-8">
+                                                                    <h4>${playerData.player.name} <span class="badge ${playerData.player.injury === 'Healthy' ? 'bg-success' : 'bg-danger'}">${playerData.player.injury}</span></h4>
+                                                                    <p class="mb-1">${playerData.player.team} | #${playerData.player.number || '-'} | ${playerData.player.position || '-'}</p>
+                                                                    <p class="mb-1">${playerData.player.height || '-'} | ${playerData.player.weight || '-'} lbs</p>
+                                                                    <p class="mb-1">College: ${playerData.player.college || '-'}</p>
+                                                                    <p>Experience: ${playerData.player.experience || '-'} years</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <h5 class="mb-3">Recent Games</h5>
+                                                            <div class="table-responsive">
+                                                                <table class="table table-dark table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Date</th>
+                                                                            <th>Opp</th>
+                                                                            <th>Result</th>
+                                                                            <th>MIN</th>
+                                                                            <th>PTS</th>
+                                                                            <th>REB</th>
+                                                                            <th>AST</th>
+                                                                            <th>STL</th>
+                                                                            <th>BLK</th>
+                                                                            <th>TO</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        ${playerData.games.map(game => `
+                                                                            <tr>
+                                                                                <td>${game.gameDate}</td>
+                                                                                <td>${game.opponent}</td>
+                                                                                <td>${game.result}</td>
+                                                                                <td>${game.minutes || '-'}</td>
+                                                                                <td>${game.points || '-'}</td>
+                                                                                <td>${game.rebounds || '-'}</td>
+                                                                                <td>${game.assists || '-'}</td>
+                                                                                <td>${game.steals || '-'}</td>
+                                                                                <td>${game.blocks || '-'}</td>
+                                                                                <td>${game.turnovers || '-'}</td>
+                                                                            </tr>
+                                                                        `).join('')}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                            
+                                            const bsPlayerModal = new bootstrap.Modal(playerModal);
+                                            bsPlayerModal.show();
+                                        }
+                                    } catch (error) {
+                                        console.error('Error fetching player data:', error);
+                                    }
+                                });
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error fetching team data:', error);
+                    }
+                } else {
+                    // Show existing modal
+                    const existingModal = new bootstrap.Modal(modal);
+                    existingModal.show();
+                }
+            });
+        });
+    </script>
+    {% include 'team_modal.html' %}
+    {% include 'player_modal.html' %}
+</body>
+</html>

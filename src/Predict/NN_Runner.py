@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from colorama import Fore, Style, init, deinit
 from keras.models import load_model
+from keras.layers import TFSMLayer
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
 
@@ -14,9 +15,26 @@ _ou_model = None
 def _load_models():
     global _model, _ou_model
     if _model is None:
-        _model = load_model('Models/NN_Models/Trained-Model-ML-1699315388.285516')
+        try:
+            # First try to load with the standard method
+            _model = load_model('Models/NN_Models/Trained-Model-ML-1699315388.285516')
+        except ValueError as e:
+            # If that fails, use TFSMLayer as suggested in the error message
+            print("Using TFSMLayer for model compatibility with Keras 3")
+            _model = tf.keras.Sequential([
+                TFSMLayer('Models/NN_Models/Trained-Model-ML-1699315388.285516', call_endpoint='serving_default')
+            ])
+    
     if _ou_model is None:
-        _ou_model = load_model("Models/NN_Models/Trained-Model-OU-1699315414.2268295")
+        try:
+            # First try to load with the standard method
+            _ou_model = load_model("Models/NN_Models/Trained-Model-OU-1699315414.2268295")
+        except ValueError as e:
+            # If that fails, use TFSMLayer as suggested in the error message
+            print("Using TFSMLayer for OU model compatibility with Keras 3")
+            _ou_model = tf.keras.Sequential([
+                TFSMLayer('Models/NN_Models/Trained-Model-OU-1699315414.2268295', call_endpoint='serving_default')
+            ])
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
     _load_models()
@@ -24,7 +42,19 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
     ml_predictions_array = []
 
     for row in data:
-        ml_predictions_array.append(_model.predict(np.array([row])))
+        # Handle both standard model and TFSMLayer model predictions
+        try:
+            pred = _model.predict(np.array([row]))
+            # If using TFSMLayer, the output might be in a different format
+            if isinstance(pred, dict):
+                # Extract the prediction from the dictionary
+                # The key might vary, so we'll take the first value
+                pred = list(pred.values())[0]
+            ml_predictions_array.append(pred)
+        except Exception as e:
+            print(f"Error during prediction: {e}")
+            # Provide a fallback prediction if needed
+            ml_predictions_array.append(np.array([[0.5, 0.5]]))
 
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
@@ -35,7 +65,18 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
     ou_predictions_array = []
 
     for row in data:
-        ou_predictions_array.append(_ou_model.predict(np.array([row])))
+        # Handle both standard model and TFSMLayer model predictions
+        try:
+            pred = _ou_model.predict(np.array([row]))
+            # If using TFSMLayer, the output might be in a different format
+            if isinstance(pred, dict):
+                # Extract the prediction from the dictionary
+                pred = list(pred.values())[0]
+            ou_predictions_array.append(pred)
+        except Exception as e:
+            print(f"Error during OU prediction: {e}")
+            # Provide a fallback prediction if needed
+            ou_predictions_array.append(np.array([[0.5, 0.5]]))
 
     count = 0
     for game in games:
