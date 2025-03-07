@@ -1,0 +1,88 @@
+{
+    "bets": [
+        {
+            "date": "2025-03-06",
+            "home_team": "Orlando Magic",
+            "away_team": "Chicago Bulls",
+            "bet_type": "moneyline",
+            "bet_pick": "Chicago Bulls",
+            "odds": 260,
+            "amount": 100.0,
+            "confidence": 0,
+            "sportsbook": "fanduel",
+            "id": 1,
+            "date_placed": "2025-03-06 18:52:46",
+            "status": "pending",
+            "profit_loss": 0.0
+        },
+        {
+            "date": "2025-03-06",
+            "home_team": "Brooklyn Nets",
+            "away_team": "Golden State Warriors",
+            "bet_type": "moneyline",
+            "bet_pick": "Brooklyn Nets",
+            "odds": 430,
+            "amount": 100.0,
+            "confidence": 0,
+            "sportsbook": "fanduel",
+            "id": 2,
+            "date_placed": "2025-03-06 18:53:39",
+            "status": "pending",
+            "profit_loss": 0.0
+        },
+        {
+            "date": "2025-03-06",
+            "home_team": "Atlanta Hawks",
+            "away_team": "Indiana Pacers",
+            "bet_type": "moneyline",
+            "bet_pick": "Indiana Pacers",
+            "odds": 112,
+            "amount": 100.0,
+            "confidence": 54.7,
+            "sportsbook": "fanduel",
+            "id": 3,
+            "date_placed": "2025-03-06 18:53:53",
+            "status": "pending",
+            "profit_loss": 0.0
+        },
+        {
+            "date": "2025-03-06",
+            "home_team": "Los Angeles Lakers",
+            "away_team": "New York Knicks",
+            "bet_type": "moneyline",
+            "bet_pick": "Los Angeles Lakers",
+            "odds": -136,
+            "amount": 100.0,
+            "confidence": 69.1,
+            "sportsbook": "fanduel",
+            "id": 4,
+            "date_placed": "2025-03-06 18:54:12",
+            "status": "pending",
+            "profit_loss": 0.0
+        },
+        {
+            "date": "2025-03-06",
+            "home_team": "New Orleans Pelicans",
+            "away_team": "Houston Rockets",
+            "bet_type": "moneyline",
+            "bet_pick": "Houston Rockets",
+            "odds": -166,
+            "amount": 100.0,
+            "confidence": 72.6,
+            "sportsbook": "fanduel",
+            "id": 5,
+            "date_placed": "2025-03-06 18:54:40",
+            "status": "pending",
+            "profit_loss": 0.0
+        }
+    ],
+    "bankroll_history": [],
+    "stats": {
+        "total_bets": 5,
+        "wins": 0,
+        "losses": 0,
+        "pushes": 0,
+        "profit_loss": 0.0,
+        "roi": 0.0
+    }
+}

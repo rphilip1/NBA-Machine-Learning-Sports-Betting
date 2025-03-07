@@ -67,10 +67,6 @@ class BettingStats(BaseModel):
     profit_loss: float
     roi: float
 
-class BankrollUpdate(BaseModel):
-    """Model for updating bankroll"""
-    amount: float
-
 class Player(BaseModel):
     """Player model"""
     name: str

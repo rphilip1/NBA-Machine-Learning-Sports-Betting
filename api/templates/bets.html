@@ -35,17 +35,6 @@
                 <div class="bg-white/5 px-6 py-6 ring-1 ring-white/10 rounded-xl">
                     <h2 class="text-xl font-semibold text-white mb-2">Bankroll</h2>
                     <p class="text-3xl font-bold text-green-500">${{ "%.2f"|format(bankroll) }}</p>
-                    
-                    <!-- Set Bankroll Form -->
-                    <form action="/bets/form/set-bankroll" method="post" class="mt-4">
-                        <div class="flex space-x-2">
-                            <input type="number" name="amount" placeholder="Initial Bankroll" step="0.01" min="0" 
-                                   class="bg-gray-800 text-white px-3 py-2 rounded-lg text-sm w-full">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
-                                Set
-                            </button>
-                        </div>
-                    </form>
                 </div>
                 
                 <div class="bg-white/5 px-6 py-6 ring-1 ring-white/10 rounded-xl">
@@ -83,11 +72,13 @@
                 </div>
             </div>
 
-            <!-- Bankroll History Chart -->
+            <!-- Bankroll History Chart
             <div class="bg-white/5 px-6 py-6 ring-1 ring-white/10 rounded-xl mb-8">
                 <h2 class="text-xl font-semibold text-white mb-4">Bankroll History</h2>
-                <canvas id="bankrollChart" height="250"></canvas>
-            </div>
+                <div class="h-40 md:h-48">
+                    <canvas id="bankrollChart"></canvas>
+                </div>
+            </div> -->
 
             <!-- Add New Bet and Bet List Tabs -->
             <div class="bg-white/5 ring-1 ring-white/10 rounded-xl mb-8">
@@ -358,18 +349,30 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `$${context.raw.toFixed(2)}`;
+                                }
+                            }
                         }
                     },
                     scales: {
                         x: {
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                                display: false
                             },
                             ticks: {
-                                color: 'rgba(255, 255, 255, 0.7)'
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 5
                             }
                         },
                         y: {
@@ -380,7 +383,8 @@
                                 color: 'rgba(255, 255, 255, 0.7)',
                                 callback: function(value) {
                                     return '$' + value;
-                                }
+                                },
+                                maxTicksLimit: 5
                             }
                         }
                     }

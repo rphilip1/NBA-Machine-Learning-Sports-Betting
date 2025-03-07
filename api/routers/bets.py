@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import date
 
 from src.Utils.BetTracker import BetTracker
-from api.models.schemas import Bet, BetCreate, BetUpdate, BankrollUpdate, BettingStats, BankrollHistory
+from api.models.schemas import Bet, BetCreate, BetUpdate, BettingStats, BankrollHistory
 
 router = APIRouter(
     prefix="/bets",
@@ -63,15 +63,6 @@ async def update_bet(
         raise HTTPException(status_code=404, detail=f"Bet with ID {bet_id} not found")
     
     return {"success": True}
-
-@router.post("/set-bankroll")
-async def set_bankroll(
-    bankroll_update: BankrollUpdate,
-    tracker: BetTracker = Depends(get_bet_tracker)
-):
-    """Set initial bankroll"""
-    success = tracker.set_initial_bankroll(bankroll_update.amount)
-    return {"success": success}
 
 # API endpoints for frontend
 
@@ -144,13 +135,4 @@ async def update_bet_form(
     score_away_int = int(score_away) if score_away else None
     
     tracker.update_bet_result(bet_id, status, score_home_int, score_away_int)
-    return RedirectResponse(url="/bets/", status_code=303)
-
-@router.post("/form/set-bankroll", response_class=RedirectResponse)
-async def set_bankroll_form(
-    amount: float = Form(...),
-    tracker: BetTracker = Depends(get_bet_tracker)
-):
-    """Set initial bankroll from form submission"""
-    tracker.set_initial_bankroll(amount)
     return RedirectResponse(url="/bets/", status_code=303) 

@@ -64,7 +64,7 @@ def fetch_game_data(sportsbook: str = "fanduel", ttl_hash=None):
     if ttl_hash is not None:
         del ttl_hash
         
-    cmd = ["python", "main.py", "-xgb", f"-odds={sportsbook}"]
+    cmd = ["python", "main.py", "-{}", f"-odds={sportsbook}"]
     try:
         stdout = subprocess.check_output(cmd).decode()
         
